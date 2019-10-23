@@ -61,13 +61,10 @@ async function downloadWallpapers(wallpapers, folder) {
     fs.mkdirSync(folder);
   }
 
-  Promise.all(wallpapers.map(wallpaper => {
+  return Promise.all(wallpapers.map(wallpaper => {
     console.log(`Downloading ${wallpaper.name}`);
-    downloadWallpaper(wallpaper, folder)
-  })).then(() => {
-      console.log(`Downloaded all ${wallpapers.length} wallpapers.`);
-      process.exit(0);
-    });
+    return downloadWallpaper(wallpaper, folder)
+  }));
 }
 
 async function downloadWallpaper(wallpaper, folder) {
@@ -95,7 +92,11 @@ async function scrape() {
 
   const wallpapers = await getWallpaperInfo(url);
 
-  downloadWallpapers(wallpapers, folder);
+  downloadWallpapers(wallpapers, folder)
+    .then(() => {
+      console.log(`Downloaded all ${wallpapers.length} wallpapers.`);
+      process.exit(0);
+    });
 }
 
 scrape();

@@ -21,11 +21,10 @@ async function scrape() {
 
   const wallpapers = await getWallpaperInfo(url);
 
-  downloadWallpapers(wallpapers, folder)
-    .then(() => {
-      console.log(`Downloaded all ${wallpapers.length} wallpapers.`);
-      process.exit(0);
-    });
+  await downloadWallpapers(wallpapers, folder);
+
+  console.log(`Downloaded all ${wallpapers.length} wallpapers.`);
+  process.exit(0);
 }
 
 scrape();

@@ -3,16 +3,36 @@ const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
 
-const URL = 'https://www.smashingmagazine.com/2019/09/desktop-wallpaper-calendars-october-2019/';
 const TARGET_FOLDER = './downloads';
 
 const WALLPAPER_TITLE_SELECTOR = '#article__content .c-garfield-the-cat h3[id]';
 const WALLPAPER_LINK_SELECTOR = `${WALLPAPER_TITLE_SELECTOR} + p + figure + ul li:nth-child(2) a:last-child`;
 
-async function downloadImage(image) {
+function processArguments() {
+  if (process.argv.indexOf('-f') === -1 || process.argv.indexOf('-u') === -1) {
+    console.log('need both -f and -u args');
+    process.exit(1);
+  }
+
+  const folder = process.argv[process.argv.indexOf('-f') + 1];
+  const url = process.argv[process.argv.indexOf('-u') + 1];
+
+  return {
+    folder,
+    url
+  }
+}
+
+async function getDOM(url) {
+  const response = await axios.get(url);
+  const $ = cheerio.load(response.data);
+  return $;
+}
+
+async function downloadWallpaper(image, folder) {
   const { name, url, fileType } = image;
 
-  const downloadPath = path.resolve(TARGET_FOLDER, `${name}${fileType}`);
+  const downloadPath = path.resolve(folder, `${name}${fileType}`);
   const fileWriter = fs.createWriteStream(downloadPath)
 
   const response = await axios({
@@ -29,14 +49,11 @@ async function downloadImage(image) {
   });
 }
 
-async function getDOM() {
-  const response = await axios.get(URL);
-  const $ = cheerio.load(response.data);
-  return $;
-}
 
 async function scrape() {
-  const $ = await getDOM();
+  const { folder, url } = processArguments();
+
+  const $ = await getDOM(url);
 
   const wallpapers = [];
 
@@ -61,7 +78,10 @@ async function scrape() {
     wallpapers[i].fileType = fileType;
   });
 
-  wallpapers.forEach(downloadImage);
+  Promise.all(wallpapers.map(wallpaper => downloadWallpaper(wallpaper, folder)))
+    .then(() => {
+      process.exit(0);
+    });
 }
 
 scrape();
